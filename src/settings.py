@@ -9,6 +9,14 @@ class BaseSettings(PydanticSettings):
     model_config = SettingsConfigDict(env_file="prod.env", extra="allow")
 
 
+class FastAPISettings(BaseSettings):
+    FASTAPI_HOST: str = "localhost"
+    FASTAPI_PORT: int = 8000
+
+    PROJECT_NAME: str = "FastAPI"
+    VERSION: str = "1.0.0"
+
+
 class DriverSettings(BaseSettings):
     DRIVER_PATH: str | None = 'driver/chromedriver.exe'
 
@@ -20,13 +28,15 @@ class HHSettings(BaseSettings):
 
 @dataclass
 class Config:
+    fastapi_settings: FastAPISettings
     driver_settings: DriverSettings
-    hh_setting: HHSettings
+    hh_settings: HHSettings
 
 
 @lru_cache
 def get_config():
     return Config(
+        fastapi_settings=FastAPISettings(),
         driver_settings=DriverSettings(),
-        hh_setting=HHSettings(),
+        hh_settings=HHSettings(),
     )

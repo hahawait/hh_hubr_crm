@@ -1,14 +1,16 @@
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+
+from settings import DriverSettings
 
 
 class Driver:
-    def __init__(self, driver_path: str) -> WebDriver:
+    def __init__(self, driver_settings: DriverSettings) -> WebDriver:
         options = Options()
 
         options.add_argument(
@@ -30,12 +32,11 @@ class Driver:
 
         # Создание драйвера Chrome с указанием пути к исполняемому файлу и объекта Options
         driver = webdriver.Chrome(
-            service=Service(driver_path), options=options)
+            service=Service(driver_settings.DRIVER_PATH), options=options)
 
         driver.maximize_window()
 
         self.driver = driver
-        # return driver
 
     def find_in_web_element_by_class_name(self, element: WebElement, value: str) -> str:
         try:
@@ -60,6 +61,3 @@ class Driver:
             return self.driver.find_element(By.CSS_SELECTOR, value)
         except NoSuchElementException:
             return None
-
-# if __name__ == "__main__":
-    # get_driver("driver/chromedriver.exe")

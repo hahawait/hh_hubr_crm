@@ -1,6 +1,8 @@
-from src.apps.base.driver import Driver
+from apps.base.driver import Driver
+from settings import Config
 
 
 class BaseService:
-    def __init__(self, driver_path: str):
-        self.driver = Driver(driver_path)
+    def __init__(self, config: Config, driver: Driver):
+        self.config = config
+        self.driver = driver

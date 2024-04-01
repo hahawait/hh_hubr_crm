@@ -2,19 +2,15 @@ import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC
 
-from src.settings import HHSettings
-from src.apps.base.service import BaseService
+from settings import HHSettings
+from apps.base.service import BaseService
+from apps.base.models import VacancyModel
 
 
 class HHService(BaseService):
-    def __init__(self, driver_path: str, config: HHSettings):
-        super().__init__(driver_path=driver_path)
-        self.config = config
-
     def hh_auth(self, url: str):
         self.driver.driver.get(url)
 
@@ -35,12 +31,12 @@ class HHService(BaseService):
         # Нахождение поля "Электронная почта или телефон" по атрибуту data-qa и ввод данных
         username_input = self.driver.find_by_css_selector(
             "input[data-qa='login-input-username']")
-        username_input.send_keys(self.config.LOGIN)
+        username_input.send_keys(self.config.hh_settings.LOGIN)
 
         # Нахождение поля "Пароль" по атрибуту data-qa и ввод данных
         password_input = self.driver.find_by_css_selector(
             "input[data-qa='login-input-password']")
-        password_input.send_keys(self.config.PASSWORD)
+        password_input.send_keys(self.config.hh_settings.PASSWORD)
 
         time.sleep(1.5)
 
@@ -53,7 +49,7 @@ class HHService(BaseService):
     def _get_contact_buttons(self):
         return self.driver.driver.find_elements(By.CSS_SELECTOR, 'button[data-qa="vacancy-serp__vacancy_contacts"]')
 
-    def get_data(self, url: str):
+    def get_vacancy(self, url: str):
         time.sleep(1)
 
         self.driver.driver.get(url)
@@ -151,5 +147,3 @@ class HHService(BaseService):
 
             except NoSuchElementException:
                 continue
-        print(count)
-        print(len(buttons))

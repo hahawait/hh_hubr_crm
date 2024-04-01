@@ -3,6 +3,8 @@ anyio==4.3.0
 attrs==23.2.0
 certifi==2024.2.2
 cffi==1.16.0
+click==8.1.7
+colorama==0.4.6
 fastapi==0.110.0
 h11==0.14.0
 idna==3.6
@@ -21,4 +23,5 @@ trio==0.24.0
 trio-websocket==0.11.1
 typing_extensions==4.10.0
 urllib3==2.2.1
+uvicorn==0.29.0
 wsproto==1.2.0
