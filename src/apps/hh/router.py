@@ -1,8 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from apps.hh.service import HHService
-from settings import get_config
-from apps.base.driver import Driver
+from apps.hh.schemas import HHResponce
+from apps.hh.dependencies import get_hh_service
 
 hh_router = APIRouter(
     prefix="/hh",
@@ -10,10 +10,11 @@ hh_router = APIRouter(
 )
 
 
-@hh_router.post("/auth")
-async def hh_auth(url: str):
-    config = get_config()
-    driver = Driver(config.driver_settings)
-    hh_service = HHService(config, driver)
-    hh_service.hh_auth(url)
-    return {"message": "Authentication completed successfully"}
+@hh_router.get("/get_vacancy")
+async def get_vacancy(
+    url: str,
+    start_page: int,
+    end_page: int,
+    hh_service: HHService = Depends(get_hh_service)
+) -> HHResponce:
+    return hh_service.get_vacancy(url, start_page, end_page)

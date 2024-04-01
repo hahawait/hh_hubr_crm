@@ -1,8 +1,9 @@
-from dataclasses import dataclass
+from typing import Literal
 from functools import lru_cache
+from dataclasses import dataclass
 
-from pydantic_settings import BaseSettings as PydanticSettings
 from pydantic_settings import SettingsConfigDict
+from pydantic_settings import BaseSettings as PydanticSettings
 
 
 class BaseSettings(PydanticSettings):
@@ -10,6 +11,7 @@ class BaseSettings(PydanticSettings):
 
 
 class FastAPISettings(BaseSettings):
+    LOGGING_LEVEL: Literal["DEBUG", "INFO", "WARN", "ERROR", "FATAL"] = "INFO"
     FASTAPI_HOST: str = "localhost"
     FASTAPI_PORT: int = 8000
 

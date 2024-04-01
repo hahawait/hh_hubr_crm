@@ -7,4 +7,5 @@ class VacancyModel(BaseModel):
     phone_numbers: list[str] | None = None
     email: str | None = None
     contact_name: str | None = None
-    salary: int | None = None
+    salary: str | None = None
+    description: str | None = None
