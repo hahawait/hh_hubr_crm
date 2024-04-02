@@ -1,6 +1,6 @@
 from pydantic import RootModel
 
-from apps.base.models import VacancyModel
+from apps.hh.models import VacancyModel
 
 
 class HHResponce(RootModel):
