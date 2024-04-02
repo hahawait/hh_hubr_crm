@@ -28,11 +28,17 @@ class HHSettings(BaseSettings):
     PASSWORD: str
 
 
+class HubrSettings(BaseSettings):
+    EMAIL: str
+    PASSWORD: str
+
+
 @dataclass
 class Config:
     fastapi_settings: FastAPISettings
     driver_settings: DriverSettings
     hh_settings: HHSettings
+    hubr_settings: HubrSettings
 
 
 @lru_cache
@@ -41,4 +47,5 @@ def get_config():
         fastapi_settings=FastAPISettings(),
         driver_settings=DriverSettings(),
         hh_settings=HHSettings(),
+        hubr_settings=HubrSettings(),
     )

@@ -4,6 +4,7 @@ from settings import Config
 from logger.logger import init_logger
 
 from apps.hh.router import hh_router
+from apps.hubr.router import hubr_router
 
 
 def get_app(config: Config):
@@ -17,5 +18,6 @@ def get_app(config: Config):
     app = FastAPI(**fastapi_params)
 
     app.include_router(hh_router)
+    app.include_router(hubr_router)
 
     return app
