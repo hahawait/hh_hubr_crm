@@ -10,7 +10,7 @@ hh_router = APIRouter(
 )
 
 
-@hh_router.get("/get_vacancy")
+@hh_router.get("/get_vacancy", description="Поинт для парсинга вакансий")
 async def get_vacancy(
     url: str,
     start_page: int,

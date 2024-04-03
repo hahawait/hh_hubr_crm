@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 
 from apps.base.service import BaseService
-from apps.hubr.models import CompanyModel, ContactMemberModel
+from apps.hubr.models import CompanyModel, CompanyContactMemberModel, VacancyModel, CompanyContactMembersModel
 
 
 class HubrService(BaseService):
@@ -12,10 +12,10 @@ class HubrService(BaseService):
         self.driver.driver.get(url)
 
         email_field = self.driver.driver.find_element(By.ID, 'email_field')
-        email_field.send_keys(self.config.hubr_settings.EMAIL)
+        email_field.send_keys(self.config.hubr_settings.HUBR_EMAIL)
 
         password_field = self.driver.driver.find_element(By.ID, 'password_field')
-        password_field.send_keys(self.config.hubr_settings.PASSWORD)
+        password_field.send_keys(self.config.hubr_settings.HUBR_PASSWORD)
 
         input("Ввели капчу...\n")
 
@@ -49,10 +49,15 @@ class HubrService(BaseService):
         self.driver.driver.close()
         return companies_url
 
-    def _get_company_contact_member(self, url: str) -> ContactMemberModel:
+    def _get_company_contact_member(self, url: str) -> CompanyContactMemberModel:
         self.driver.driver.get(url)
 
-        contact_member = ContactMemberModel(contact_name=self.driver.find_by_class_name('page-title__title').text)
+        limit_element = self.driver.find_by_class_name('no-content__description')
+        if limit_element and "суточный лимит" in limit_element.text:
+            print(limit_element.text)
+            return
+
+        contact_member = CompanyContactMemberModel(contact_name=self.driver.find_by_class_name('page-title__title').text)
         contact_elements = self.driver.driver.find_elements(By.CLASS_NAME, 'user-page-sidebar__contact-item')
 
         for contact_element in contact_elements:
@@ -66,24 +71,24 @@ class HubrService(BaseService):
             contact_member.contacts[contact_type[:-1]] = contact_value
         return contact_member
 
-    def _get_company_contact_members(self) -> list[ContactMemberModel]:
+    def get_company_contact_members(self) -> CompanyContactMemberModel:
         contact_members = []
-
+        company = CompanyContactMembersModel(company_name=self.driver.find_by_class_name('company_name').text)
         contacts = self.driver.driver.find_elements(By.CLASS_NAME, 'company_public_member')
         for contact in contacts:
             try:
                 link = contact.get_attribute('href')
-                contact_members.append(self._get_company_contact_member(link))
+                contact_member = self._get_company_contact_member(link)
+                if not contact_member:
+                    return
+                contact_members.append(contact_member)
             except StaleElementReferenceException:
                 continue
+        company.contact_members.append(contact_members)
+        return contact_members
 
-        return contact_members, len(contact_members)
-
-    def _get_company_contacts(self, url: str) -> CompanyModel:
-        self.driver.driver.get(url)
-
+    def get_company_contacts(self) -> CompanyModel:
         company = CompanyModel(company_name=self.driver.find_by_class_name('company_name').text)
-        total = 0
         company_contacts_element = self.driver.find_by_class_name('contacts')
         if company_contacts_element:
             company_contacts = company_contacts_element.find_elements(By.CLASS_NAME, 'contact')
@@ -95,21 +100,54 @@ class HubrService(BaseService):
                 contact_value = self.driver.find_in_web_element_by_class_name(contact, 'value').text
                 company.contacts[contact_type[:-1]] = contact_value
 
-            company.contact_members, total = self._get_company_contact_members()
+        return company
 
-        return company, total
+    def _get_vacancy_list_from_page(self) -> list[VacancyModel]:
+        vacancy_list = []
 
-    def get_companies_contacts(self, urls: list[str]) -> list[CompanyModel]:
-        companies = []
+        vacancy_elements = self.driver.driver.find_elements(By.CLASS_NAME, 'vacancy-card')
+        
+        for element in vacancy_elements:
+            # Находим элемент с классом vacancy-card__company и получаем текст из него
+            company_name = self.driver.find_in_web_element_by_class_name(element, 'vacancy-card__company-title')
 
-        self._auth()
-        self.driver.driver.get(urls[0])
-        input("Нажали войти...\n")
+            # Находим элемент с классом vacancy-card__title и получаем текст из него
+            title = self.driver.find_in_web_element_by_class_name(element, 'vacancy-card__title-link')
 
-        limit = 0
-        for url in urls:
-            company, total = self._get_company_contacts(url)
-            companies.append(company)
-            limit += total
-        print("TOTAL LIMIT: ", limit)
-        return companies
+            # Находим элемент с классом basic-date и получаем текст из него
+            date = self.driver.find_in_web_element_by_class_name(element, 'basic-date')
+
+            # Находим элемент с классом basic-salary и получаем текст из него
+            salary = self.driver.find_in_web_element_by_class_name(element, 'basic-salary')
+            vacancy_list.append(
+                VacancyModel(
+                    company_name=company_name.text if company_name else company_name,
+                    vacancy_name=title.text if title else title,
+                    salary=salary.text if salary else salary,
+                    date=date.get_attribute('datetime') if date else date,
+                )
+            )
+
+        return vacancy_list
+
+    def get_vacancy_list(self, url: str) -> list[VacancyModel]:
+        vacancy_list = []
+        self.driver.driver.get(url)
+        time.sleep(0.2)
+
+        while True:
+            try:
+                time.sleep(1)
+                vacancy_list.extend(self._get_vacancy_list_from_page())
+
+                # Находим кнопку "Следующая страница" по ее классу
+                next_button = self.driver.driver.find_element(By.CSS_SELECTOR, '.with-pagination__side-button a[rel="next"]')
+                # Кликаем на кнопку "Следующая страница"
+                next_button.click()
+
+            except NoSuchElementException:
+                break
+
+        self.driver.driver.close()
+
+        return vacancy_list

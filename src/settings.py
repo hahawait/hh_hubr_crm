@@ -24,13 +24,13 @@ class DriverSettings(BaseSettings):
 
 
 class HHSettings(BaseSettings):
-    LOGIN: str
-    PASSWORD: str
+    HH_LOGIN: str
+    HH_PASSWORD: str
 
 
 class HubrSettings(BaseSettings):
-    EMAIL: str
-    PASSWORD: str
+    HUBR_EMAIL: str
+    HUBR_PASSWORD: str
 
 
 @dataclass
