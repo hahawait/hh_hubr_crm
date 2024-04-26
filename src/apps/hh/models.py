@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 class VacancyModel(BaseModel):
@@ -9,3 +9,10 @@ class VacancyModel(BaseModel):
     contact_name: str | None = None
     salary: str | None = None
     description: str | None = None
+    vacancy_link: str | None = None
+
+    @validator('phone_numbers', pre=True)
+    def remove_tel_prefix(cls, v):
+        if v:
+            return [phone.replace('tel:', '') for phone in v]
+        return v

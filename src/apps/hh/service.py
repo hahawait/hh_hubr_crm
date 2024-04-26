@@ -87,6 +87,7 @@ class HHService(BaseService):
 
         for button in buttons:
             self.driver.driver.execute_script("arguments[0].scrollIntoView(true);", button)
+
             try:
                 vacancy = button.find_element(By.XPATH, "ancestor::div[contains(@class, 'vacancy-serp-item__layout')]")
                 vacancy_name = self.driver.find_in_web_element_by_css_selector(vacancy, 'span.serp-item__title-link.serp-item__title[data-qa="serp-item__title"]')
@@ -102,6 +103,8 @@ class HHService(BaseService):
                     salary = vacancy.find_element_by_xpath(".//span[@class='compensation-text--cCPBXayRjn5GuLFWhGTJ fake-magritte-primary-text--qmdoVdtVX3UWtBb3Q7Qj separate-line-on-xs--pwAEUI79GJbGDu97czVC']").text
                 except NoSuchElementException:
                     salary = None
+
+            vacancy_link =  self.driver.find_in_web_element_by_css_selector(vacancy, 'a.bloko-link')
 
             # Кликаем на кнопку
             try:
@@ -121,7 +124,8 @@ class HHService(BaseService):
                     email=email,
                     contact_name=fio.text if fio else fio,
                     salary=salary.text if salary else salary,
-                    description=text.text if text else text
+                    description=text.text if text else text,
+                    vacancy_link=vacancy_link.get_attribute("href") if vacancy_link else None
                 )
             )
             # Находим кнопку
