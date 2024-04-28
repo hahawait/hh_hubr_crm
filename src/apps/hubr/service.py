@@ -1,23 +1,27 @@
 import time
 
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+from selenium.common.exceptions import NoSuchElementException
 
 from apps.base.service import BaseService
-from apps.hubr.models import CompanyModel, CompanyContactMemberModel, VacancyModel, CompanyContactMembersModel
+from apps.hubr.exceptions import DailyLimitExceededError
+from apps.hubr.models import CompanyModel, CompanyContactMemberModel, VacancyModel
 
 
 class HubrService(BaseService):
-    def _auth(self, url: str = "https://account.habr.com/login/"):
+    def _auth(self, email: str, password: str, url: str = "https://account.habr.com/login/"):
         self.driver.driver.get(url)
 
         email_field = self.driver.driver.find_element(By.ID, 'email_field')
-        email_field.send_keys(self.config.hubr_settings.HUBR_EMAIL)
+        email_field.send_keys(email)
 
         password_field = self.driver.driver.find_element(By.ID, 'password_field')
-        password_field.send_keys(self.config.hubr_settings.HUBR_PASSWORD)
+        password_field.send_keys(password)
 
-        input("Ввели капчу...\n")
+        input("Авторизация закончена?\n")
+
+        self.driver.driver.get("https://career.habr.com/vacancies?type=all")
+        input("Авторизация на странице закончена?\n")
 
     def _get_companies_url_from_page(self) -> list[str]:
         companies = self.driver.driver.find_elements(By.CLASS_NAME, 'companies-item')
@@ -49,13 +53,12 @@ class HubrService(BaseService):
         self.driver.driver.close()
         return companies_url
 
-    def _get_company_contact_member(self, url: str) -> CompanyContactMemberModel:
+    def get_company_contact_member(self, url: str) -> CompanyContactMemberModel:
         self.driver.driver.get(url)
 
         limit_element = self.driver.find_by_class_name('no-content__description')
         if limit_element and "суточный лимит" in limit_element.text:
-            print(limit_element.text)
-            return
+            raise DailyLimitExceededError(limit_element.text)
 
         contact_member = CompanyContactMemberModel(contact_name=self.driver.find_by_class_name('page-title__title').text)
         contact_elements = self.driver.driver.find_elements(By.CLASS_NAME, 'user-page-sidebar__contact-item')
@@ -71,21 +74,26 @@ class HubrService(BaseService):
             contact_member.contacts[contact_type[:-1]] = contact_value
         return contact_member
 
-    def get_company_contact_members(self) -> CompanyContactMemberModel:
-        contact_members = []
-        company = CompanyContactMembersModel(company_name=self.driver.find_by_class_name('company_name').text)
-        contacts = self.driver.driver.find_elements(By.CLASS_NAME, 'company_public_member')
-        for contact in contacts:
-            try:
+    def get_company_contact_members_urls(self) -> list[str]:
+        contact_members_urls = []
+
+        # Находим все слайды с контактными лицами компании
+        slides = self.driver.driver.find_elements(By.CLASS_NAME, 'swiper-slide')
+
+        # Перебираем каждый слайд
+        for i in range(len(slides)):
+            time.sleep(0.5)
+            # Находим все ссылки на контактные лица внутри текущего слайда
+            contacts = slides[i].find_elements(By.CLASS_NAME, 'company-public-member')
+            for contact in contacts:
                 link = contact.get_attribute('href')
-                contact_member = self._get_company_contact_member(link)
-                if not contact_member:
-                    return
-                contact_members.append(contact_member)
-            except StaleElementReferenceException:
-                continue
-        company.contact_members.append(contact_members)
-        return contact_members
+                contact_members_urls.append(link)
+            if len(slides) > 1:
+                next_button = self.driver.driver.find_element(By.CLASS_NAME, 'basic-slider__button--next')
+                next_button.click()
+            else:
+                break
+        return contact_members_urls
 
     def get_company_contacts(self) -> CompanyModel:
         company = CompanyModel(company_name=self.driver.find_by_class_name('company_name').text)
@@ -132,19 +140,21 @@ class HubrService(BaseService):
 
     def get_vacancy_list(self, url: str) -> list[VacancyModel]:
         vacancy_list = []
-        self.driver.driver.get(url)
-        time.sleep(0.2)
+        url += "&page=1"
+        c = 1
 
         while True:
+            print(url)
             try:
                 time.sleep(1)
+                self.driver.driver.get(url)
                 vacancy_list.extend(self._get_vacancy_list_from_page())
 
-                # Находим кнопку "Следующая страница" по ее классу
-                next_button = self.driver.driver.find_element(By.CSS_SELECTOR, '.with-pagination__side-button a[rel="next"]')
-                # Кликаем на кнопку "Следующая страница"
-                next_button.click()
+                if self.driver.find_by_class_name('no-content'):
+                    break
 
+                url = url.replace(f"page={c}", f"page={c + 1}")
+                c+=1
             except NoSuchElementException:
                 break
 

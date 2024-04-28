@@ -12,7 +12,7 @@ class BaseSettings(PydanticSettings):
 
 class FastAPISettings(BaseSettings):
     LOGGING_LEVEL: Literal["DEBUG", "INFO", "WARN", "ERROR", "FATAL"] = "INFO"
-    FASTAPI_HOST: str = "localhost"
+    FASTAPI_HOST: str = "0.0.0.0"
     FASTAPI_PORT: int = 8000
 
     PROJECT_NAME: str = "FastAPI"
@@ -28,17 +28,11 @@ class HHSettings(BaseSettings):
     HH_PASSWORD: str
 
 
-class HubrSettings(BaseSettings):
-    HUBR_EMAIL: str
-    HUBR_PASSWORD: str
-
-
 @dataclass
 class Config:
     fastapi_settings: FastAPISettings
     driver_settings: DriverSettings
     hh_settings: HHSettings
-    hubr_settings: HubrSettings
 
 
 @lru_cache
@@ -47,5 +41,4 @@ def get_config():
         fastapi_settings=FastAPISettings(),
         driver_settings=DriverSettings(),
         hh_settings=HHSettings(),
-        hubr_settings=HubrSettings(),
     )

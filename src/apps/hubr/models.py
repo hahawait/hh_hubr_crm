@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 
 class VacancyModel(BaseModel):
@@ -19,6 +19,15 @@ class CompanyContactMembersModel(BaseModel):
     company_name: str
     contact_members: list[CompanyContactMemberModel] = []
 
+
+class CompanyContactMembersUrlsModel(BaseModel): 
+    company_name: str
+    contact_members_urls: list[str] = []
+
+    @computed_field
+    @property
+    def total_urls(self) -> int:
+        return len(self.contact_members_urls)
 
 class CompanyModel(BaseModel):
     company_name: str
