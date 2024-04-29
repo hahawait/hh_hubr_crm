@@ -10,4 +10,5 @@ app = get_app(config=config)
 if __name__ == "__main__":
     host = config.fastapi_settings.FASTAPI_HOST
     port = config.fastapi_settings.FASTAPI_PORT
-    uvicorn.run('main:app', host=host, port=port, reload=True)
+    uvicorn.run(app, host=host, port=port)
+    # uvicorn.run('main:app', host=host, port=port, reload=True)

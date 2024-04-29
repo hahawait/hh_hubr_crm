@@ -18,6 +18,7 @@ async def get_vacancy(
     end_page: int,
     hh_service: HHService = Depends(get_hh_service)
 ) -> Response:
+    start_page -= 1
     vacancies = hh_service.get_vacancy(url, start_page, end_page)
     buffer = create_excel_file(vacancies)
 

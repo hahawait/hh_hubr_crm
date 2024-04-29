@@ -3,7 +3,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 
 from apps.base.service import BaseService
@@ -128,15 +128,14 @@ class HHService(BaseService):
                     vacancy_link=vacancy_link.get_attribute("href") if vacancy_link else None
                 )
             )
+
             # Находим кнопку
-            close_button = WebDriverWait(self.driver.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@type='button' and @class='bloko-icon-link']")))
             try:
-            # Кликаем на кнопку
-                close_button.click()
-            except Exception:
-                continue
-            finally:
-                time.sleep(0.2)
+                close_button = WebDriverWait(self.driver.driver, 10).until(EC.visibility_of_element_located((By.CLASS_NAME, "vacancy-contacts-call-tracking__close")))
+            except TimeoutException:
+                close_button = WebDriverWait(self.driver.driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "button[data-qa='bloko-drop-down-close-button']")))
+            close_button.click()
+            time.sleep(0.2)
 
         return vacancy_list
 

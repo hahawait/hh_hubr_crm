@@ -144,7 +144,6 @@ class HubrService(BaseService):
         c = 1
 
         while True:
-            print(url)
             try:
                 time.sleep(1)
                 self.driver.driver.get(url)
