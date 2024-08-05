@@ -14,11 +14,9 @@ def create_excel_file(vacancies: list[VacancyModel]) -> BytesIO:
         "Название вакансии",
         "Название компании",
         "Контактное лицо",
-        "Телефон 1",
-        "Телефон 2",
+        "Телефон",
         "Email",
         "Зарплата",
-        "Описание",
         "Ссылка на вакансию"
     ]
 
@@ -30,11 +28,9 @@ def create_excel_file(vacancies: list[VacancyModel]) -> BytesIO:
             vacancy.vacancy_name,
             vacancy.company_name,
             vacancy.contact_name,
-            vacancy.phone_numbers[0] if vacancy.phone_numbers else None,
-            vacancy.phone_numbers[1] if len(vacancy.phone_numbers) >= 2 else None,
+            vacancy.phone_numbers,
             vacancy.email,
             vacancy.salary,
-            vacancy.description,
             vacancy.vacancy_link
         ])
 
