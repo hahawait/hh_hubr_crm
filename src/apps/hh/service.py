@@ -71,14 +71,13 @@ class HHService(BaseService):
 
     def _get_contacts(self) -> tuple[str, list[str], str, str]:
         time.sleep(2)
-        print("sleep 2 sec")
         contact_block = self.driver.find_by_css_selector("div[data-qa='drop-base']")
         if not contact_block:
             contact_block = self.driver.find_by_class_name("vacancy-contacts-call-tracking")
             if not contact_block:
                 contact_block = self.driver.find_by_class_name("vacancy-contacts")
 
-        # Регулярное выражение для имени (предполагаем, что имя - это два слова с большой буквы)
+        # Регулярное выражение для имени
         name_pattern = r"([А-Я][а-я]+(?: [А-Я][а-я]+){0,2})"
         # Регулярное выражение для номера телефона
         phone_pattern = r"\+7 \d{3} \d{6}"
@@ -110,35 +109,39 @@ class HHService(BaseService):
         vacancy_list = []
 
         time.sleep(0.5)
-
         self.driver.driver.get(url)
-
         time.sleep(0.5)
 
         buttons = self._get_contact_buttons()
 
         for button in buttons:
+
             self.driver.driver.execute_script("arguments[0].scrollIntoView(true);", button)
             vacancy = button.find_element(By.XPATH, "../../../../..")
 
-            salary_pattern = r"(\d{1,3}(?:\s?\d{3})*\s?–\s?\d{1,3}(?:\s?\d{3})*\s?₽\s?(?:на руки|до вычета налогов))|(\d{1,3}(?:\s?\d{3})*\s?₽\s?на руки)"
-            salary_match = re.search(salary_pattern, vacancy.text)
-            salary = salary_match.group(0) if salary_match else None
+            text = list(vacancy.text.strip().split('\n'))
+            new_text = []
+            company = None
+            salary = None
+            # Фильтрация текста
+            for v in text:
+                if "Сейчас" in v or "пыт" in v or "Можно удалённо" in v:
+                    continue
+                new_text.append(v)
+                if "до вычета" in v or "на руки" in v:
+                    salary = v
 
-            vacancy_name_pattern = r"^(?:Сейчас смотрят \d+ человек(?:а|)|Сейчас смотрит \d+ человек(?:|а))?\n?(\D+)"
-            vacancy_name_match = re.search(vacancy_name_pattern, vacancy.text)
-            vacancy_name = vacancy_name_match.group(1).strip() if vacancy_name_match else None
-
-            company_pattern = r"(Опыт (?:1-3 года|3-6 лет|более 6 лет)|Без опыта)(?:\n(.+?)\n)?"
-            company_match = re.search(company_pattern, vacancy.text)
-            company = company_match.group(2).strip() if company_match else None
+            vacancy_name = new_text[0]
+            if salary:
+                company = new_text[2]
+            else:
+                company = new_text[1]
 
             try:
                 vacancy_link = vacancy.find_element(By.CSS_SELECTOR, "a[data-qa='serp-item__title']")
             except NoSuchElementException:
                 vacancy_link = vacancy.find_element(By.CSS_SELECTOR, "span.serp-item__title-link-wrapper a.bloko-link")
 
-            print(vacancy.text, '\n\n')
             # Кликаем на кнопку
             try:
                 button.click()
