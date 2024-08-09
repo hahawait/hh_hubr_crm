@@ -1,4 +1,5 @@
-import time, re
+import time
+import re
 
 from selenium import webdriver
 
@@ -71,39 +72,38 @@ class HHService(BaseService):
 
     def _get_contacts(self) -> tuple[str, list[str], str, str]:
         time.sleep(2)
-        contact_block = self.driver.find_by_css_selector("div[data-qa='drop-base']")
+        contact_block = self.driver.find_by_class_name("vacancy-contacts-call-tracking")
         if not contact_block:
-            contact_block = self.driver.find_by_class_name("vacancy-contacts-call-tracking")
-            if not contact_block:
-                contact_block = self.driver.find_by_class_name("vacancy-contacts")
-
-        # Регулярное выражение для имени
-        name_pattern = r"([А-Я][а-я]+(?: [А-Я][а-я]+){0,2})"
+            contact_block = self.driver.find_by_class_name(
+                "magritte-drop-container___dbMt9_6-0-7"
+            )
+        text = list(contact_block.text.strip().split('\n'))
+        # print("TEXT:\n", text, '\n')
         # Регулярное выражение для номера телефона
         phone_pattern = r"\+7 \d{3} \d{6}"
         # Регулярное выражение для электронной почты
         email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
 
-        fio = re.search(name_pattern, contact_block.text)
         phone = re.search(phone_pattern, contact_block.text)
         email = re.search(email_pattern, contact_block.text)
-        # Убедимся, что все значения найдены, иначе возвращаем None
-        fio = fio.group(0) if fio else None
+
+        fio = text[0]
         phone = phone.group(0) if phone else None
         email = email.group(0) if email else None
 
         try:
-            close_button = WebDriverWait(self.driver.driver, 1).until(EC.visibility_of_element_located((By.CLASS_NAME, "vacancy-contacts-call-tracking__close")))
+            close_button = WebDriverWait(self.driver.driver, 0.5).until(
+                EC.visibility_of_element_located((By.CLASS_NAME, "vacancy-contacts-call-tracking__close")))
             close_button.click()
         except TimeoutException:
             try:
-                close_button = WebDriverWait(self.driver.driver, 1).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "button[data-qa='bloko-drop-down-close-button']")))
+                close_button = WebDriverWait(self.driver.driver, 0.5).until(EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, "button[data-qa='bloko-drop-down-close-button']")))
                 close_button.click()
             except TimeoutException:
                 webdriver.ActionChains(self.driver.driver).send_keys(Keys.ESCAPE).perform()
-
+        # print("RES: ", fio, phone, email, '\n\n')
         return fio, phone, email
-
 
     def _get_vacancy_list_from_page(self, url: str) -> list[VacancyModel]:
         vacancy_list = []
@@ -120,22 +120,14 @@ class HHService(BaseService):
             vacancy = button.find_element(By.XPATH, "../../../../..")
 
             text = list(vacancy.text.strip().split('\n'))
-            new_text = []
-            company = None
+
             salary = None
             # Фильтрация текста
-            for v in text:
-                if "Сейчас" in v or "пыт" in v or "Можно удалённо" in v:
-                    continue
-                new_text.append(v)
-                if "до вычета" in v or "на руки" in v:
-                    salary = v
-
-            vacancy_name = new_text[0]
-            if salary:
-                company = new_text[2]
-            else:
-                company = new_text[1]
+            if 'Сейчас' in text[0]:
+                text = text[1:]
+            vacancy_name = text[0]
+            salary = text[1] if 'до вычета' or 'на руки' in text[1] else None
+            company = text[3] if 'Можно удалённо' not in text[3] else text[4]
 
             try:
                 vacancy_link = vacancy.find_element(By.CSS_SELECTOR, "a[data-qa='serp-item__title']")

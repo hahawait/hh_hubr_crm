@@ -19,13 +19,14 @@ async def get_vacancy(
     hh_service: HHService = Depends(get_hh_service)
 ) -> Response:
     start_page -= 1
+    end_page -= 1
     hh_service.auth()
     vacancies = hh_service.get_vacancy(url, start_page, end_page)
     buffer = create_excel_file(vacancies)
 
     return Response(
-        buffer.getvalue(), 
-        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+        buffer.getvalue(),
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers={"Content-Disposition": "attachment;filename=hh_vacancies.xlsx"}
     )
 
@@ -43,8 +44,7 @@ async def get_vacancy_with_captcha(
     buffer = create_excel_file(vacancies)
 
     return Response(
-        buffer.getvalue(), 
-        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+        buffer.getvalue(),
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers={"Content-Disposition": "attachment;filename=hh_vacancies.xlsx"}
     )
-
