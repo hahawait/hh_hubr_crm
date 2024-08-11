@@ -74,9 +74,12 @@ class HHService(BaseService):
         time.sleep(2)
         contact_block = self.driver.find_by_class_name("vacancy-contacts-call-tracking")
         if not contact_block:
-            contact_block = self.driver.find_by_class_name(
-                "magritte-drop-container___dbMt9_6-0-7"
-            )
+            if not contact_block:
+                contact_block = self.driver.find_by_class_name("bloko-drop__content-wrapper")
+                if not contact_block:
+                    contact_block = self.driver.find_by_class_name(
+                        "magritte-drop-container___dbMt9_6-0-7"
+                    )
         text = list(contact_block.text.strip().split('\n'))
         # print("TEXT:\n", text, '\n')
         # Регулярное выражение для номера телефона
@@ -121,13 +124,14 @@ class HHService(BaseService):
 
             text = list(vacancy.text.strip().split('\n'))
 
-            salary = None
-            # Фильтрация текста
-            if 'Сейчас' in text[0]:
-                text = text[1:]
+            # Фильтрация текста для удаления нежелательных строк
+            text = [line for line in text if not re.search(r"Работодатель онлайн|пыт|Сейчас|Можно удалённо", line)]
+            # print("TEXT:\n", text, '\n')
+
             vacancy_name = text[0]
-            salary = text[1] if 'до вычета' or 'на руки' in text[1] else None
-            company = text[3] if 'Можно удалённо' not in text[3] else text[4]
+            salary = text[1] if 'до вычета' in text[1] or 'на руки' in text[1] else None
+            company = text[2] if salary else text[1]
+            # print("RES:\n", vacancy_name, salary, company, '\n\n')
 
             try:
                 vacancy_link = vacancy.find_element(By.CSS_SELECTOR, "a[data-qa='serp-item__title']")
@@ -141,7 +145,6 @@ class HHService(BaseService):
                 continue
 
             fio, phone, email = self._get_contacts()
-
             vacancy_list.append(
                 VacancyModel(
                     company_name=company,
