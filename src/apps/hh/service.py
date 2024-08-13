@@ -18,7 +18,7 @@ from apps.hh.models import VacancyModel
 class HHService(BaseService):
     def auth(self, url: str = "https://hh.ru"):
         self.driver.driver.get(url)
-
+        time.sleep(2)
         # Нахождение элемента "Войти" по CSS-селектору
         login_button = self.driver.find_by_css_selector(".supernova-button[data-qa='login']")
 
@@ -31,7 +31,7 @@ class HHService(BaseService):
 
             # Клик на кнопку "Войти с паролем"
             login_with_password_button.click()
-
+            time.sleep(2)
             # Нахождение поля "Электронная почта или телефон" по атрибуту data-qa и ввод данных
             username_input = self.driver.find_by_css_selector("input[data-qa='login-input-username']")
             username_input.send_keys(self.config.hh_settings.HH_LOGIN)
@@ -83,7 +83,7 @@ class HHService(BaseService):
         text = list(contact_block.text.strip().split('\n'))
         # print("TEXT:\n", text, '\n')
         # Регулярное выражение для номера телефона
-        phone_pattern = r"\+7 \d{3} \d{6}"
+        phone_pattern = r"\+7 \d{3} \d{7}"
         # Регулярное выражение для электронной почты
         email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
 
