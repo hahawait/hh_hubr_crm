@@ -74,12 +74,13 @@ class HHService(BaseService):
         time.sleep(2)
         contact_block = self.driver.find_by_class_name("vacancy-contacts-call-tracking")
         if not contact_block:
+            contact_block = self.driver.find_by_class_name("bloko-drop__content-wrapper")
             if not contact_block:
-                contact_block = self.driver.find_by_class_name("bloko-drop__content-wrapper")
+                contact_block = self.driver.find_by_class_name(
+                    "magritte-drop-container___dbMt9_6-0-7"
+                )
                 if not contact_block:
-                    contact_block = self.driver.find_by_class_name(
-                        "magritte-drop-container___dbMt9_6-0-7"
-                    )
+                    contact_block = self.driver.find_by_css_selector('[data-qa="drop-base"]')
         text = list(contact_block.text.strip().split('\n'))
         # print("TEXT:\n", text, '\n')
         # Регулярное выражение для номера телефона
